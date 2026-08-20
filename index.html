@@ -11,7 +11,7 @@
 /* ===== НАСТРОЙКА ХРАНИЛИЩА =====
    url — Project URL из Supabase (Settings → API → Project URL) */
 window.ICEBERG_CONFIG = {
-  url: '',
+  url: 'https://njtypkxwivlqaejzlbdr.supabase.co',
   key: 'sb_publishable_tReCJymRytfF4sexOLYu4w_qX9XikdJ'
 };
 </script>
@@ -38,15 +38,38 @@ body{
 .scene{
   position:relative;
   width:100%;
-  aspect-ratio: 5 / 9;
+  aspect-ratio: 736 / 1307;
   overflow:hidden;
-}
-.scene svg{
-  position:absolute; inset:0;
-  width:100%; height:100%;
-  display:block;
+  background:#04223f url('bg.jpg') center / 100% 100% no-repeat;
 }
 .placing .scene{ cursor:crosshair; }
+
+/* ---------- секции глубины ---------- */
+.sect-line{
+  position:absolute; left:0; right:0; height:0;
+  border-top:1.5px solid rgba(225,242,255,.35);
+  z-index:2; pointer-events:none;
+}
+.sect-line.water{
+  border-top-color:rgba(240,252,255,.8);
+  box-shadow:0 0 14px rgba(190,235,255,.45);
+}
+.sect-label{
+  position:absolute; left:14px; z-index:3;
+  transform:translateY(10px);
+  pointer-events:none;
+  font-family:'Unbounded',sans-serif; font-weight:500;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(240,250,255,.9);
+  background:rgba(4,14,30,.45);
+  border:1px solid rgba(225,242,255,.22);
+  border-radius:999px;
+  padding:5px 12px;
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+@media (max-width:560px){
+  .sect-label{ font-size:9px; padding:4px 9px; left:8px; }
+}
 
 /* ---------- шапка ---------- */
 .hero{
@@ -295,6 +318,7 @@ let pending = null;      // выбранная точка {x,y}
 let photoBlob = null;    // сжатое фото (Blob)
 let photoPreviewUrl = null;
 const LOCAL_KEY = 'iceberg-tani-local';
+let loadWarned = false;
 
 /* ---------- утилиты ---------- */
 function esc(s){
@@ -338,9 +362,15 @@ async function loadStories(){
     .order('created_at', { ascending: true });
   if (error){
     console.error(error);
-    toast('Не удалось загрузить истории');
+    if (!loadWarned){
+      loadWarned = true;
+      toast(error.code === 'PGRST205'
+        ? 'База ещё не настроена: выполни setup.sql в Supabase'
+        : 'Не удалось загрузить истории');
+    }
     return;
   }
+  loadWarned = false;
   stories = (data || []).map(r => ({
     id: r.id, title: r.title, text: r.story, author: r.author || '',
     img: r.img_url || '', x: r.x, y: r.y, ts: Date.parse(r.created_at)
@@ -397,41 +427,22 @@ async function deleteStory(id){
   return true;
 }
 
-/* ---------- фон-иллюстрация ---------- */
-const SCENE_SVG = `
-<svg viewBox="0 0 500 900" preserveAspectRatio="none" aria-hidden="true">
-  <defs>
-    <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2c5d9e"/><stop offset=".72" stop-color="#4a86c4"/><stop offset="1" stop-color="#7fb0dd"/>
-    </linearGradient>
-    <linearGradient id="g-sea" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1d4d8c"/><stop offset=".45" stop-color="#0e2f5e"/><stop offset="1" stop-color="#050f22"/>
-    </linearGradient>
-    <linearGradient id="g-berg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#7fb2e0"/><stop offset=".55" stop-color="#4d84bd"/><stop offset="1" stop-color="#1d4577"/>
-    </linearGradient>
-    <linearGradient id="g-depth" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#050f22" stop-opacity="0"/><stop offset="1" stop-color="#050f22" stop-opacity=".92"/>
-    </linearGradient>
-  </defs>
-  <rect x="0" y="0" width="500" height="302" fill="url(#g-sky)"/>
-  <rect x="0" y="300" width="500" height="600" fill="url(#g-sea)"/>
-  <polygon points="60,300 85,286 118,300" fill="#cfe3f2" opacity=".7"/>
-  <polygon points="415,300 438,290 462,300" fill="#cfe3f2" opacity=".55"/>
-  <polygon points="250,118 215,158 183,212 148,300 262,300" fill="#f7fafd"/>
-  <polygon points="250,118 296,172 318,218 358,300 262,300" fill="#dfe9f2"/>
-  <polygon points="296,172 318,218 283,232" fill="#c9dcec" opacity=".9"/>
-  <polygon points="215,158 183,212 226,204" fill="#ffffff" opacity=".8"/>
-  <polygon points="128,300 168,254 204,300" fill="#e9f1f8"/>
-  <polygon points="340,300 372,268 398,300" fill="#e2ecf5"/>
-  <rect x="0" y="299" width="500" height="2.6" fill="#dfeefc" opacity=".85"/>
-  <polygon points="148,302 358,302 338,330 170,330" fill="#9cc4e6" opacity=".45"/>
-  <polygon points="140,302 368,302 398,418 372,520 334,646 292,762 254,846 216,732 178,604 142,472 122,382" fill="url(#g-berg)"/>
-  <polygon points="368,302 398,418 334,646 254,846 282,610 304,436" fill="#38689f" opacity=".55"/>
-  <polygon points="196,318 230,498 214,656 184,522 172,402" fill="#8fbce4" opacity=".38"/>
-  <polygon points="254,846 292,762 268,700 244,712" fill="#2a5788" opacity=".6"/>
-  <rect x="0" y="302" width="500" height="598" fill="url(#g-depth)"/>
-</svg>`;
+/* ---------- секции глубины (в % высоты фона) ---------- */
+const SECTIONS = [
+  { name: 'Поверхность', top: 0 },
+  { name: 'Мелководье',  top: 20.5, water: true },
+  { name: 'Глубина',     top: 36 },
+  { name: 'Тьма',        top: 52 },
+  { name: 'Бездна',      top: 68 },
+  { name: 'Дно',         top: 84 }
+];
+
+function sectionsHTML(){
+  return SECTIONS.map(s =>
+    (s.top > 0 ? `<div class="sect-line${s.water ? ' water' : ''}" style="top:${s.top}%"></div>` : '') +
+    `<span class="sect-label" style="top:${s.top}%">${esc(s.name)}</span>`
+  ).join('');
+}
 
 /* ---------- рендер ---------- */
 function pinHTML(st){
@@ -449,7 +460,7 @@ function render(){
     : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'истории' : 'историй';
   app.innerHTML = `
     <div class="scene" id="scene">
-      ${SCENE_SVG}
+      ${sectionsHTML()}
       <header class="hero">
         <h1>Айсберг Тани</h1>
         <p>Каждый может вморозить сюда свою историю — чем глубже, тем страшнее правда.</p>

@@ -10,10 +10,9 @@
 ## Подключение хранилища
 
 1. В Supabase выполнить [`setup.sql`](setup.sql) (Dashboard → SQL Editor → Run).
-2. В `index.html` в блоке `ICEBERG_CONFIG` вписать `url` — Project URL вида
-   `https://xxxxx.supabase.co` (Settings → API → Project URL).
+2. В `index.html` в блоке `ICEBERG_CONFIG` указан `url` проекта и publishable-ключ.
 
-Пока `url` пустой, сайт работает в локальном режиме: истории сохраняются
+Если `url` пустой, сайт работает в локальном режиме: истории сохраняются
 только в браузере посетителя (localStorage) и показывается предупреждение.
 
 ## Заметки
