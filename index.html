@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Айсберг Тани</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,10 78,45 92,90 8,90 25,40' fill='%237fb2e0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600;700&display=swap">
+<script>
+/* ===== НАСТРОЙКА ХРАНИЛИЩА =====
+   url — Project URL из Supabase (Settings → API → Project URL) */
+window.ICEBERG_CONFIG = {
+  url: '',
+  key: 'sb_publishable_tReCJymRytfF4sexOLYu4w_qX9XikdJ'
+};
+</script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+:root{
+  --abyss:#050f22;
+  --ink:#eaf3fc;
+  --ink-dim:rgba(216,235,250,.6);
+  --blue:#2f7fe0;
+  --blue-hover:#4490ee;
+  --panel:#0a1e3a;
+  --panel-border:rgba(150,200,250,.22);
+}
+body{
+  background:var(--abyss);
+  font-family:'Golos Text','Segoe UI',system-ui,sans-serif;
+  color:var(--ink);
+  min-height:100vh;
+}
+
+/* ---------- сцена ---------- */
+.scene{
+  position:relative;
+  width:100%;
+  aspect-ratio: 5 / 9;
+  overflow:hidden;
+}
+.scene svg{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  display:block;
+}
+.placing .scene{ cursor:crosshair; }
+
+/* ---------- шапка ---------- */
+.hero{
+  position:absolute; z-index:5;
+  top:0; left:0; right:0;
+  text-align:center;
+  padding:5% 20px 0;
+  pointer-events:none;
+}
+.hero h1{
+  font-family:'Unbounded',sans-serif; font-weight:900;
+  font-size:clamp(26px, 6vw, 58px);
+  letter-spacing:.03em; text-transform:uppercase;
+  color:#f4f9fd;
+  text-shadow:0 2px 18px rgba(10,40,80,.55);
+  text-wrap:balance;
+}
+.hero p{
+  margin-top:8px;
+  font-size:clamp(13px, 1.8vw, 16px);
+  color:rgba(235,245,252,.85);
+  text-shadow:0 1px 10px rgba(10,40,80,.5);
+}
+.hero .stats{
+  display:inline-block; margin-top:12px;
+  font-size:12.5px; font-weight:600;
+  color:#eaf3fc;
+  background:rgba(8,30,60,.35);
+  border:1px solid rgba(235,245,252,.25);
+  border-radius:999px;
+  padding:5px 14px;
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+
+/* ---------- пины ---------- */
+.pin{
+  position:absolute; z-index:4;
+  width:28px; height:28px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  border:2.5px solid #fff;
+  background:var(--blue) center/cover no-repeat;
+  cursor:pointer;
+  padding:0;
+  box-shadow:0 4px 14px rgba(0,10,30,.5), 0 0 0 4px rgba(47,127,224,.25);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.pin:hover{ transform:translate(-50%,-50%) scale(1.25); z-index:6; }
+.pin:focus-visible{ outline:2px solid #fff; outline-offset:3px; }
+.pin .pin-label{
+  position:absolute; top:calc(100% + 8px); left:50%;
+  transform:translateX(-50%);
+  max-width:150px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  background:rgba(6,20,42,.9); color:var(--ink);
+  border:1px solid var(--panel-border);
+  font:600 12px 'Golos Text',sans-serif;
+  border-radius:8px; padding:4px 9px;
+  opacity:0; pointer-events:none;
+  transition:opacity .15s ease;
+}
+.pin:hover .pin-label, .pin:focus-visible .pin-label{ opacity:1; }
+
+.empty-hint{
+  position:absolute; z-index:4;
+  left:50%; top:46%;
+  transform:translate(-50%,-50%);
+  background:rgba(6,20,42,.55);
+  border:1.5px dashed rgba(235,245,252,.4);
+  color:rgba(235,245,252,.85);
+  border-radius:14px;
+  padding:12px 20px;
+  font-size:14px; font-weight:500;
+  text-align:center;
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+
+/* ---------- футер ---------- */
+.floor{
+  text-align:center; padding:34px 20px 110px;
+  color:rgba(140,180,215,.4);
+  font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+}
+
+/* ---------- кнопка ---------- */
+.fab{
+  position:fixed; right:18px; bottom:18px; z-index:50;
+  border:none; cursor:pointer;
+  background:var(--blue); color:#fff;
+  font:700 15px 'Golos Text',sans-serif;
+  border-radius:999px; padding:14px 24px;
+  box-shadow:0 10px 26px -6px rgba(47,127,224,.65);
+  transition:transform .15s ease, background .15s ease;
+}
+.fab:hover{ background:var(--blue-hover); transform:translateY(-2px); }
+.fab:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+.placing .fab{ display:none; }
+
+.place-bar{
+  display:none;
+  position:fixed; z-index:60;
+  top:14px; left:50%; transform:translateX(-50%);
+  background:var(--blue); color:#fff;
+  border-radius:12px; padding:10px 16px;
+  font:600 14px 'Golos Text',sans-serif;
+  box-shadow:0 10px 30px -8px rgba(0,10,30,.6);
+  align-items:center; gap:12px;
+  max-width:92vw;
+}
+.placing .place-bar{ display:flex; }
+.place-bar button{
+  border:none; cursor:pointer;
+  background:rgba(255,255,255,.2); color:#fff;
+  border-radius:8px; padding:5px 11px;
+  font:600 12.5px 'Golos Text',sans-serif;
+}
+.place-bar button:hover{ background:rgba(255,255,255,.32); }
+
+.config-warn{
+  position:fixed; z-index:70;
+  bottom:18px; left:18px;
+  max-width:320px;
+  background:#3a2a00; color:#ffd98a;
+  border:1px solid #8a6a1e;
+  border-radius:12px; padding:10px 14px;
+  font:500 12.5px 'Golos Text',sans-serif;
+}
+
+/* ---------- диалоги ---------- */
+dialog{
+  margin:auto;
+  border:none; border-radius:18px;
+  background:var(--panel); color:var(--ink);
+  padding:0;
+  width:min(92vw, 480px);
+  box-shadow:0 24px 60px -12px rgba(0,0,0,.7);
+}
+dialog::backdrop{ background:rgba(1,6,14,.72); backdrop-filter:blur(3px); }
+.dlg-body{ padding:24px; position:relative; }
+.dlg-body h2{
+  font-family:'Unbounded',sans-serif; font-weight:700;
+  font-size:18px; line-height:1.3; text-wrap:balance;
+  margin-bottom:4px; padding-right:36px;
+}
+.dlg-close{
+  position:absolute; top:12px; right:12px;
+  border:none; background:rgba(255,255,255,.08); color:var(--ink);
+  width:32px; height:32px; border-radius:50%; cursor:pointer;
+  font-size:15px; line-height:1;
+}
+.dlg-close:hover{ background:rgba(255,255,255,.16); }
+.view-meta{ font-size:12px; color:var(--ink-dim); margin-bottom:14px; font-weight:500; }
+.view-photo{ margin:0 0 14px; }
+.view-photo img{
+  display:block; max-width:100%; max-height:320px;
+  border-radius:12px; border:1px solid var(--panel-border);
+}
+.view-text{ font-size:15px; line-height:1.6; white-space:pre-wrap; max-width:60ch; }
+.view-actions{ margin-top:20px; display:flex; justify-content:flex-end; }
+.btn-danger{
+  border:1px solid rgba(255,120,120,.35); background:transparent; color:#ff9d9d;
+  font:600 13px 'Golos Text',sans-serif;
+  border-radius:10px; padding:8px 14px; cursor:pointer;
+}
+.btn-danger:hover{ background:rgba(255,120,120,.1); }
+
+form .field{ margin-bottom:14px; }
+form label{ display:block; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:6px; }
+form input[type=text], form textarea{
+  width:100%;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--panel-border);
+  color:var(--ink);
+  border-radius:10px;
+  padding:10px 12px;
+  font:400 15px 'Golos Text',sans-serif;
+}
+form input::placeholder, form textarea::placeholder{ color:rgba(216,235,250,.35); }
+form textarea{ min-height:100px; resize:vertical; }
+.photo-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.photo-btn{
+  border:1.5px dashed var(--panel-border); background:transparent; color:var(--ink-dim);
+  border-radius:10px; padding:9px 14px; cursor:pointer;
+  font:600 13px 'Golos Text',sans-serif;
+}
+.photo-btn:hover{ color:var(--ink); border-color:var(--ink-dim); }
+.photo-preview{ display:none; align-items:center; gap:10px; }
+.photo-preview.on{ display:flex; }
+.photo-preview img{
+  width:52px; height:52px; object-fit:cover;
+  border-radius:10px; border:1px solid var(--panel-border);
+}
+.photo-remove{
+  border:none; background:transparent; color:#ff9d9d; cursor:pointer;
+  font:600 12.5px 'Golos Text',sans-serif; padding:4px;
+}
+.form-actions{ display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:18px; }
+.btn-primary{
+  border:none; cursor:pointer;
+  background:var(--blue); color:#fff;
+  font:700 14px 'Golos Text',sans-serif;
+  border-radius:10px; padding:11px 20px;
+}
+.btn-primary:hover{ background:var(--blue-hover); }
+.btn-primary[disabled]{ opacity:.6; cursor:wait; }
+.btn-ghost{
+  border:none; background:transparent; color:var(--ink-dim);
+  font:600 14px 'Golos Text',sans-serif; cursor:pointer; padding:10px 12px;
+}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+  z-index:100;
+  background:#0d2740; color:var(--ink);
+  border:1px solid var(--panel-border);
+  border-radius:12px; padding:10px 18px;
+  font:500 14px 'Golos Text',sans-serif;
+  box-shadow:0 10px 30px -8px rgba(0,0,0,.6);
+  max-width:88vw; text-align:center;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
+}
+@media (max-width:560px){
+  .pin{ width:24px; height:24px; }
+  .fab{ right:14px; bottom:14px; padding:13px 20px; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const CFG = window.ICEBERG_CONFIG || {};
+const hasBackend = !!(CFG.url && CFG.key);
+const supabase = hasBackend ? createClient(CFG.url, CFG.key) : null;
+
+const app = document.getElementById('app');
+let stories = [];
+let placing = false;
+let pending = null;      // выбранная точка {x,y}
+let photoBlob = null;    // сжатое фото (Blob)
+let photoPreviewUrl = null;
+const LOCAL_KEY = 'iceberg-tani-local';
+
+/* ---------- утилиты ---------- */
+function esc(s){
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fmtDate(ts){
+  try { return new Date(ts).toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'}); }
+  catch(e){ return ''; }
+}
+
+let toastEl = null, toastTimer = null;
+function toast(msg){
+  toastEl?.remove();
+  clearTimeout(toastTimer);
+  toastEl = document.createElement('div');
+  toastEl.className = 'toast';
+  toastEl.textContent = msg;
+  document.body.appendChild(toastEl);
+  toastTimer = setTimeout(() => { toastEl?.remove(); toastEl = null; }, 3500);
+}
+
+/* ---------- хранилище ---------- */
+function localLoad(){
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch(e){ return []; }
+}
+function localSave(list){
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch(e){}
+}
+
+async function loadStories(){
+  if (!hasBackend){
+    stories = localLoad();
+    render();
+    return;
+  }
+  const { data, error } = await supabase
+    .from('stories')
+    .select('id,title,story,author,img_url,x,y,created_at')
+    .order('created_at', { ascending: true });
+  if (error){
+    console.error(error);
+    toast('Не удалось загрузить истории');
+    return;
+  }
+  stories = (data || []).map(r => ({
+    id: r.id, title: r.title, text: r.story, author: r.author || '',
+    img: r.img_url || '', x: r.x, y: r.y, ts: Date.parse(r.created_at)
+  }));
+  render();
+}
+
+async function addStory(story){
+  if (!hasBackend){
+    stories = stories.concat([story]);
+    localSave(stories);
+    render();
+    return true;
+  }
+  let imgUrl = '';
+  if (photoBlob){
+    const name = `${crypto.randomUUID()}.jpg`;
+    const { error: upErr } = await supabase.storage.from('photos')
+      .upload(name, photoBlob, { contentType: 'image/jpeg' });
+    if (upErr){
+      console.error(upErr);
+      toast('Фото не загрузилось — попробуй ещё раз');
+      return false;
+    }
+    imgUrl = supabase.storage.from('photos').getPublicUrl(name).data.publicUrl;
+  }
+  const { error } = await supabase.from('stories').insert({
+    title: story.title, story: story.text, author: story.author,
+    img_url: imgUrl, x: story.x, y: story.y
+  });
+  if (error){
+    console.error(error);
+    toast('Не получилось сохранить — попробуй ещё раз');
+    return false;
+  }
+  await loadStories();
+  return true;
+}
+
+async function deleteStory(id){
+  if (!hasBackend){
+    stories = stories.filter(s => s.id !== id);
+    localSave(stories);
+    render();
+    return true;
+  }
+  const { error } = await supabase.from('stories').delete().eq('id', id);
+  if (error){
+    console.error(error);
+    toast('Не получилось удалить');
+    return false;
+  }
+  await loadStories();
+  return true;
+}
+
+/* ---------- фон-иллюстрация ---------- */
+const SCENE_SVG = `
+<svg viewBox="0 0 500 900" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c5d9e"/><stop offset=".72" stop-color="#4a86c4"/><stop offset="1" stop-color="#7fb0dd"/>
+    </linearGradient>
+    <linearGradient id="g-sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d4d8c"/><stop offset=".45" stop-color="#0e2f5e"/><stop offset="1" stop-color="#050f22"/>
+    </linearGradient>
+    <linearGradient id="g-berg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fb2e0"/><stop offset=".55" stop-color="#4d84bd"/><stop offset="1" stop-color="#1d4577"/>
+    </linearGradient>
+    <linearGradient id="g-depth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#050f22" stop-opacity="0"/><stop offset="1" stop-color="#050f22" stop-opacity=".92"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="500" height="302" fill="url(#g-sky)"/>
+  <rect x="0" y="300" width="500" height="600" fill="url(#g-sea)"/>
+  <polygon points="60,300 85,286 118,300" fill="#cfe3f2" opacity=".7"/>
+  <polygon points="415,300 438,290 462,300" fill="#cfe3f2" opacity=".55"/>
+  <polygon points="250,118 215,158 183,212 148,300 262,300" fill="#f7fafd"/>
+  <polygon points="250,118 296,172 318,218 358,300 262,300" fill="#dfe9f2"/>
+  <polygon points="296,172 318,218 283,232" fill="#c9dcec" opacity=".9"/>
+  <polygon points="215,158 183,212 226,204" fill="#ffffff" opacity=".8"/>
+  <polygon points="128,300 168,254 204,300" fill="#e9f1f8"/>
+  <polygon points="340,300 372,268 398,300" fill="#e2ecf5"/>
+  <rect x="0" y="299" width="500" height="2.6" fill="#dfeefc" opacity=".85"/>
+  <polygon points="148,302 358,302 338,330 170,330" fill="#9cc4e6" opacity=".45"/>
+  <polygon points="140,302 368,302 398,418 372,520 334,646 292,762 254,846 216,732 178,604 142,472 122,382" fill="url(#g-berg)"/>
+  <polygon points="368,302 398,418 334,646 254,846 282,610 304,436" fill="#38689f" opacity=".55"/>
+  <polygon points="196,318 230,498 214,656 184,522 172,402" fill="#8fbce4" opacity=".38"/>
+  <polygon points="254,846 292,762 268,700 244,712" fill="#2a5788" opacity=".6"/>
+  <rect x="0" y="302" width="500" height="598" fill="url(#g-depth)"/>
+</svg>`;
+
+/* ---------- рендер ---------- */
+function pinHTML(st){
+  let style = `left:${(+st.x).toFixed(2)}%; top:${(+st.y).toFixed(2)}%;`;
+  if (st.img) style += `background-image:url('${esc(st.img)}');`;
+  return `<button class="pin" type="button" data-story="${esc(st.id)}" style="${style}" aria-label="${esc(st.title)}">
+    <span class="pin-label">${esc(st.title)}</span>
+  </button>`;
+}
+
+function render(){
+  document.body.classList.toggle('placing', placing);
+  const n = stories.length;
+  const word = (n % 10 === 1 && n % 100 !== 11) ? 'история'
+    : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'истории' : 'историй';
+  app.innerHTML = `
+    <div class="scene" id="scene">
+      ${SCENE_SVG}
+      <header class="hero">
+        <h1>Айсберг Тани</h1>
+        <p>Каждый может вморозить сюда свою историю — чем глубже, тем страшнее правда.</p>
+        <span class="stats">на айсберге: ${n} ${word}</span>
+      </header>
+      ${n ? stories.map(pinHTML).join('') :
+        '<div class="empty-hint">Пока пусто.<br>Жми «Кинуть историю» и ставь пин куда угодно</div>'}
+    </div>
+    <footer class="floor">дальше только мантия земли</footer>
+    <button class="fab" type="button" id="start-place">Кинуть историю</button>
+    <div class="place-bar"><span>Кликни в то место айсберга, где живёт эта история</span>
+      <button type="button" id="cancel-place">Отмена</button></div>
+    ${hasBackend ? '' : '<div class="config-warn">Хранилище ещё не подключено: истории сохраняются только в этом браузере. Впиши Project URL из Supabase в ICEBERG_CONFIG.</div>'}
+    <dialog id="dlg-view">
+      <div class="dlg-body">
+        <button class="dlg-close" type="button" data-close aria-label="Закрыть">✕</button>
+        <h2 id="v-title"></h2>
+        <div class="view-meta" id="v-meta"></div>
+        <figure class="view-photo" id="v-photo" hidden><img id="v-img" alt=""></figure>
+        <div class="view-text" id="v-text"></div>
+        <div class="view-actions"><button class="btn-danger" type="button" id="v-del">Растопить (удалить)</button></div>
+      </div>
+    </dialog>
+    <dialog id="dlg-add">
+      <div class="dlg-body">
+        <button class="dlg-close" type="button" data-close aria-label="Закрыть">✕</button>
+        <h2>Новая история</h2>
+        <form id="add-form">
+          <div class="field"><label for="f-title">Заголовок</label>
+            <input id="f-title" type="text" maxlength="120" required placeholder="Таня и три будильника"></div>
+          <div class="field"><label for="f-text">Как всё было</label>
+            <textarea id="f-text" maxlength="4000" required placeholder="Рассказывай. Здесь никто не осудит (осудят)."></textarea></div>
+          <div class="field"><label>Фото (необязательно)</label>
+            <div class="photo-row">
+              <button class="photo-btn" type="button" id="f-photo-btn">Прикрепить фото</button>
+              <input id="f-photo" type="file" accept="image/*" hidden>
+              <span class="photo-preview" id="f-photo-preview"><img id="f-photo-img" alt="превью">
+                <button class="photo-remove" type="button" id="f-photo-remove">убрать</button></span>
+            </div></div>
+          <div class="field"><label for="f-author">Кто сдал (необязательно)</label>
+            <input id="f-author" type="text" maxlength="60" placeholder="аноним"></div>
+          <div class="form-actions">
+            <button class="btn-ghost" type="button" data-close>Отмена</button>
+            <button class="btn-primary" type="submit" id="f-submit">Вморозить в айсберг</button>
+          </div>
+        </form>
+      </div>
+    </dialog>`;
+}
+
+/* ---------- фото ---------- */
+function setPhotoPreview(blob){
+  if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+  photoPreviewUrl = URL.createObjectURL(blob);
+  document.getElementById('f-photo-img').src = photoPreviewUrl;
+  document.getElementById('f-photo-preview').classList.add('on');
+  document.getElementById('f-photo-btn').textContent = 'Заменить фото';
+}
+function clearPhoto(){
+  photoBlob = null;
+  if (photoPreviewUrl){ URL.revokeObjectURL(photoPreviewUrl); photoPreviewUrl = null; }
+  const prev = document.getElementById('f-photo-preview');
+  if (prev){
+    prev.classList.remove('on');
+    document.getElementById('f-photo-img').removeAttribute('src');
+    document.getElementById('f-photo').value = '';
+    document.getElementById('f-photo-btn').textContent = 'Прикрепить фото';
+  }
+}
+function processPhoto(file){
+  if (!file || !/^image\//.test(file.type)){ toast('Это не картинка'); return; }
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    const MAX = 1280;
+    const k = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+    const cw = Math.max(1, Math.round(img.naturalWidth * k));
+    const ch = Math.max(1, Math.round(img.naturalHeight * k));
+    const cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+    cv.toBlob(blob => {
+      if (!blob){ toast('Не удалось обработать фото'); return; }
+      photoBlob = blob;
+      setPhotoPreview(blob);
+    }, 'image/jpeg', 0.82);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('Не удалось прочитать фото'); };
+  img.src = url;
+}
+
+/* ---------- взаимодействия ---------- */
+function openAddDialog(){
+  clearPhoto();
+  document.getElementById('dlg-add').showModal();
+  document.getElementById('f-title').focus();
+}
+
+let viewedId = null;
+function openView(id){
+  const st = stories.find(s => s.id === id);
+  if (!st) return;
+  viewedId = id;
+  document.getElementById('v-title').textContent = st.title;
+  document.getElementById('v-meta').textContent =
+    (st.author || 'аноним') + ' · ' + fmtDate(st.ts);
+  const ph = document.getElementById('v-photo');
+  if (st.img){ document.getElementById('v-img').src = st.img; ph.hidden = false; }
+  else { ph.hidden = true; document.getElementById('v-img').removeAttribute('src'); }
+  document.getElementById('v-text').textContent = st.text;
+  document.getElementById('dlg-view').showModal();
+}
+
+app.addEventListener('click', ev => {
+  const t = ev.target;
+
+  if (t.closest('#start-place')){
+    placing = true;
+    document.body.classList.add('placing');
+    return;
+  }
+  if (t.id === 'cancel-place'){
+    placing = false;
+    document.body.classList.remove('placing');
+    return;
+  }
+
+  const pin = t.closest('[data-story]');
+  if (pin && !placing){ openView(pin.getAttribute('data-story')); return; }
+
+  if (t.closest('[data-close]')){
+    t.closest('dialog')?.close();
+    return;
+  }
+
+  if (t.id === 'v-del'){
+    if (!viewedId) return;
+    if (!window.confirm('Точно растопить эту историю? Её не вернуть.')) return;
+    t.disabled = true;
+    deleteStory(viewedId).then(ok => {
+      const dlg = document.getElementById('dlg-view');
+      if (ok && dlg?.open) dlg.close();
+      const btn = document.getElementById('v-del');
+      if (!ok && btn) btn.disabled = false;
+    });
+    return;
+  }
+
+  if (t.id === 'f-photo-btn'){ document.getElementById('f-photo').click(); return; }
+  if (t.id === 'f-photo-remove'){ clearPhoto(); return; }
+
+  if (placing){
+    const scene = document.getElementById('scene');
+    if (scene.contains(t)){
+      const r = scene.getBoundingClientRect();
+      const x = ((ev.clientX - r.left) / r.width) * 100;
+      const y = ((ev.clientY - r.top) / r.height) * 100;
+      pending = { x: Math.min(99, Math.max(1, x)), y: Math.min(99, Math.max(1, y)) };
+      placing = false;
+      document.body.classList.remove('placing');
+      openAddDialog();
+    }
+  }
+});
+
+app.addEventListener('change', ev => {
+  if (ev.target?.id === 'f-photo'){
+    const f = ev.target.files?.[0];
+    if (f) processPhoto(f);
+  }
+});
+
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && placing){
+    placing = false;
+    document.body.classList.remove('placing');
+  }
+});
+
+app.addEventListener('submit', ev => {
+  const form = ev.target.closest('#add-form');
+  if (!form) return;
+  ev.preventDefault();
+  if (!pending){ toast('Сначала выбери точку на айсберге'); return; }
+  const story = {
+    id: crypto.randomUUID(),
+    title: document.getElementById('f-title').value.trim(),
+    text: document.getElementById('f-text').value.trim(),
+    author: document.getElementById('f-author').value.trim(),
+    img: '',
+    x: pending.x,
+    y: pending.y,
+    ts: Date.now()
+  };
+  if (!story.title || !story.text) return;
+  const btn = document.getElementById('f-submit');
+  btn.disabled = true;
+  btn.textContent = 'Вмораживаем…';
+  addStory(story).then(ok => {
+    if (ok){
+      pending = null;
+      clearPhoto();
+      const dlg = document.getElementById('dlg-add');
+      if (dlg?.open) dlg.close();
+      toast('История вморожена в айсберг');
+    } else {
+      const b = document.getElementById('f-submit');
+      if (b){ b.disabled = false; b.textContent = 'Вморозить в айсберг'; }
+    }
+  });
+});
+
+render();
+loadStories();
+if (hasBackend) setInterval(loadStories, 25000); /* подтягивать чужие истории */
+</script>
+</body>
+</html>
