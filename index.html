@@ -38,11 +38,11 @@ body{
 .scene{
   position:relative;
   width:100%;
-  aspect-ratio: 736 / 1307;
+  aspect-ratio: 1440 / 2557;
   overflow:hidden;
   background:#04223f url('bg.jpg') center / 100% 100% no-repeat;
+  cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='13' fill='%232f7fe0' fill-opacity='.92' stroke='white' stroke-width='2'/><path d='M15 8.5v13M8.5 15h13' stroke='white' stroke-width='2.6' stroke-linecap='round'/></svg>") 15 15, crosshair;
 }
-.placing .scene{ cursor:crosshair; }
 
 /* ---------- секции глубины ---------- */
 .sect-line{
@@ -120,20 +120,19 @@ body{
 .pin:hover{ transform:translate(-50%,-50%) scale(1.25); z-index:6; }
 .pin:focus-visible{ outline:2px solid #fff; outline-offset:3px; }
 .pin .pin-label{
-  position:absolute; top:calc(100% + 8px); left:50%;
+  position:absolute; top:calc(100% + 7px); left:50%;
   transform:translateX(-50%);
   max-width:150px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  background:rgba(6,20,42,.9); color:var(--ink);
+  background:rgba(6,20,42,.82); color:var(--ink);
   border:1px solid var(--panel-border);
   font:600 12px 'Golos Text',sans-serif;
   border-radius:8px; padding:4px 9px;
-  opacity:0; pointer-events:none;
-  transition:opacity .15s ease;
 }
-.pin:hover .pin-label, .pin:focus-visible .pin-label{ opacity:1; }
+.pin:hover .pin-label, .pin:focus-visible .pin-label{ background:rgba(10,32,64,.95); }
 
 .empty-hint{
+  pointer-events:none;
   position:absolute; z-index:4;
   left:50%; top:46%;
   transform:translate(-50%,-50%);
@@ -153,40 +152,6 @@ body{
   color:rgba(140,180,215,.4);
   font-size:12px; letter-spacing:.14em; text-transform:uppercase;
 }
-
-/* ---------- кнопка ---------- */
-.fab{
-  position:fixed; right:18px; bottom:18px; z-index:50;
-  border:none; cursor:pointer;
-  background:var(--blue); color:#fff;
-  font:700 15px 'Golos Text',sans-serif;
-  border-radius:999px; padding:14px 24px;
-  box-shadow:0 10px 26px -6px rgba(47,127,224,.65);
-  transition:transform .15s ease, background .15s ease;
-}
-.fab:hover{ background:var(--blue-hover); transform:translateY(-2px); }
-.fab:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
-.placing .fab{ display:none; }
-
-.place-bar{
-  display:none;
-  position:fixed; z-index:60;
-  top:14px; left:50%; transform:translateX(-50%);
-  background:var(--blue); color:#fff;
-  border-radius:12px; padding:10px 16px;
-  font:600 14px 'Golos Text',sans-serif;
-  box-shadow:0 10px 30px -8px rgba(0,10,30,.6);
-  align-items:center; gap:12px;
-  max-width:92vw;
-}
-.placing .place-bar{ display:flex; }
-.place-bar button{
-  border:none; cursor:pointer;
-  background:rgba(255,255,255,.2); color:#fff;
-  border-radius:8px; padding:5px 11px;
-  font:600 12.5px 'Golos Text',sans-serif;
-}
-.place-bar button:hover{ background:rgba(255,255,255,.32); }
 
 .config-warn{
   position:fixed; z-index:70;
@@ -313,7 +278,6 @@ const supabase = hasBackend ? createClient(CFG.url, CFG.key) : null;
 
 const app = document.getElementById('app');
 let stories = [];
-let placing = false;
 let pending = null;      // выбранная точка {x,y}
 let photoBlob = null;    // сжатое фото (Blob)
 let photoPreviewUrl = null;
@@ -430,7 +394,7 @@ async function deleteStory(id){
 /* ---------- секции глубины (в % высоты фона) ---------- */
 const SECTIONS = [
   { name: 'Поверхность', top: 0 },
-  { name: 'Мелководье',  top: 20.5, water: true },
+  { name: 'Мелководье',  top: 19.5, water: true },
   { name: 'Глубина',     top: 36 },
   { name: 'Тьма',        top: 52 },
   { name: 'Бездна',      top: 68 },
@@ -454,7 +418,6 @@ function pinHTML(st){
 }
 
 function render(){
-  document.body.classList.toggle('placing', placing);
   const n = stories.length;
   const word = (n % 10 === 1 && n % 100 !== 11) ? 'история'
     : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'истории' : 'историй';
@@ -463,16 +426,13 @@ function render(){
       ${sectionsHTML()}
       <header class="hero">
         <h1>Айсберг Тани</h1>
-        <p>Каждый может вморозить сюда свою историю — чем глубже, тем страшнее правда.</p>
+        <p>Кликни в любое место айсберга и вморозь туда свою историю — чем глубже, тем страшнее правда.</p>
         <span class="stats">на айсберге: ${n} ${word}</span>
       </header>
       ${n ? stories.map(pinHTML).join('') :
-        '<div class="empty-hint">Пока пусто.<br>Жми «Кинуть историю» и ставь пин куда угодно</div>'}
+        '<div class="empty-hint">Пока пусто.<br>Кликни в любое место — поставишь первую историю</div>'}
     </div>
     <footer class="floor">дальше только мантия земли</footer>
-    <button class="fab" type="button" id="start-place">Кинуть историю</button>
-    <div class="place-bar"><span>Кликни в то место айсберга, где живёт эта история</span>
-      <button type="button" id="cancel-place">Отмена</button></div>
     ${hasBackend ? '' : '<div class="config-warn">Хранилище ещё не подключено: истории сохраняются только в этом браузере. Впиши Project URL из Supabase в ICEBERG_CONFIG.</div>'}
     <dialog id="dlg-view">
       <div class="dlg-body">
@@ -578,19 +538,8 @@ function openView(id){
 app.addEventListener('click', ev => {
   const t = ev.target;
 
-  if (t.closest('#start-place')){
-    placing = true;
-    document.body.classList.add('placing');
-    return;
-  }
-  if (t.id === 'cancel-place'){
-    placing = false;
-    document.body.classList.remove('placing');
-    return;
-  }
-
   const pin = t.closest('[data-story]');
-  if (pin && !placing){ openView(pin.getAttribute('data-story')); return; }
+  if (pin){ openView(pin.getAttribute('data-story')); return; }
 
   if (t.closest('[data-close]')){
     t.closest('dialog')?.close();
@@ -613,17 +562,14 @@ app.addEventListener('click', ev => {
   if (t.id === 'f-photo-btn'){ document.getElementById('f-photo').click(); return; }
   if (t.id === 'f-photo-remove'){ clearPhoto(); return; }
 
-  if (placing){
-    const scene = document.getElementById('scene');
-    if (scene.contains(t)){
-      const r = scene.getBoundingClientRect();
-      const x = ((ev.clientX - r.left) / r.width) * 100;
-      const y = ((ev.clientY - r.top) / r.height) * 100;
-      pending = { x: Math.min(99, Math.max(1, x)), y: Math.min(99, Math.max(1, y)) };
-      placing = false;
-      document.body.classList.remove('placing');
-      openAddDialog();
-    }
+  /* клик по свободному месту сцены — сразу новый пин */
+  const scene = document.getElementById('scene');
+  if (scene && scene.contains(t)){
+    const r = scene.getBoundingClientRect();
+    const x = ((ev.clientX - r.left) / r.width) * 100;
+    const y = ((ev.clientY - r.top) / r.height) * 100;
+    pending = { x: Math.min(99, Math.max(1, x)), y: Math.min(99, Math.max(1, y)) };
+    openAddDialog();
   }
 });
 
@@ -631,13 +577,6 @@ app.addEventListener('change', ev => {
   if (ev.target?.id === 'f-photo'){
     const f = ev.target.files?.[0];
     if (f) processPhoto(f);
-  }
-});
-
-document.addEventListener('keydown', ev => {
-  if (ev.key === 'Escape' && placing){
-    placing = false;
-    document.body.classList.remove('placing');
   }
 });
 
